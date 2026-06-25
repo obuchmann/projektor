@@ -37,3 +37,5 @@ Konzeptphase abgeschlossen — technische Planung läuft.
 ## Docs
 
 - [PRD — Product Requirements Document](Docs/PRD.md)
+- [Architecture](Docs/Architecture.md)
+- [Testing](Docs/Testing.md)

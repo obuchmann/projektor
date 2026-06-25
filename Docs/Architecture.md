@@ -264,16 +264,15 @@ path = "~/dev"
 
 ---
 
-## 10. Offene Entscheidungen (vor Implementierung)
+## 10. Entscheidungen (finalisiert)
 
-| # | Frage | Empfehlung |
-|---|---|---|
-| 1 | **MVVM-Lib:** CommunityToolkit.Mvvm vs. ReactiveUI | CommunityToolkit — kein Rx-Bedarf sichtbar |
-| 2 | **Default-Hotkey:** global `Alt+Space` vs. plattformabhängiger Default | `Alt+Space` global; Suppression-Lücke auf Linux dokumentieren, kein anderer Default nötig |
-| 3 | **DI-Umfang:** voller Generic Host vs. nur `ServiceCollection` | Nur `ServiceCollection` — kein Hosted-Service-Overhead für diesen Use Case |
-| 4 | **Scanner-Timing:** Start / on-demand / Hintergrund mit Cache | On-demand (Button in Settings) für v1; Auto-Start als einfache Option dazu |
-
-> Command-Modell (§5) und TOML-Schema (§7) sind entschieden.
+| Thema | Entscheidung |
+|---|---|
+| **MVVM-Lib** | **CommunityToolkit.Mvvm** — Source-Generator-basiert, kein Rx-Bedarf sichtbar |
+| **Default-Hotkey** | **`Alt+Space`** global auf beiden Plattformen; Suppression-Lücke auf Linux wird dokumentiert und dem User erklärt |
+| **DI-Umfang** | **Nur `ServiceCollection`** — kein Generic Host, kein `IHostedService`-Overhead |
+| **Scanner-Timing** | **On-demand** (expliziter Button in Settings) für v1; optionaler Scan beim ersten Start |
+| **Command-Modell** | Separate `command_windows` / `command_linux`, optionaler `{path}`-Platzhalter, immer Shell-Wrapper (siehe §5) |
 
 ---
 

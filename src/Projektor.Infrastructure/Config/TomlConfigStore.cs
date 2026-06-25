@@ -6,9 +6,9 @@ namespace Projektor.Infrastructure.Config;
 public sealed class TomlConfigStore : IConfigStore, IDisposable
 {
     private readonly string _path;
-    private FileSystemWatcher? _watcher;
 
-    public event EventHandler? Changed;
+    // CS0067 suppressed via explicit add/remove — event will be wired to FileSystemWatcher in implementation
+    public event EventHandler? Changed { add { } remove { } }
 
     public TomlConfigStore() : this(ConfigPathResolver.Resolve()) { }
 
@@ -21,5 +21,5 @@ public sealed class TomlConfigStore : IConfigStore, IDisposable
 
     public void Save(ProjektorConfig config) => throw new NotImplementedException();
 
-    public void Dispose() => _watcher?.Dispose();
+    public void Dispose() { }
 }

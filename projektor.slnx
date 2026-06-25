@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/Projektor.Core/Projektor.Core.csproj" />
+  <Project Path="src/Projektor.Infrastructure/Projektor.Infrastructure.csproj" />
+  <Project Path="src/Projektor.App/Projektor.App.csproj" />
+  <Project Path="tests/Projektor.Core.Tests/Projektor.Core.Tests.csproj" />
+  <Project Path="tests/Projektor.Infrastructure.Tests/Projektor.Infrastructure.Tests.csproj" />
+</Solution>

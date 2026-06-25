@@ -64,9 +64,9 @@ projektor.slnx
 
 **Modelle** (rein, immutable wo möglich — `record`):
 
-- `ActionTemplate` — `Id`, `Name`, `Command`, `Args?`, `Icon?`. Global gültig.
+- `ActionTemplate` — `Id`, `Name`, `CommandWindows`, `CommandLinux`, `Icon?`. Global gültig. Beide Command-Felder sind optional (leer = Action auf dieser Plattform nicht verfügbar).
 - `Project` — `Name`, `Path`, `Source` (`Manual` | `Scanned`), `DisabledTemplateIds`, `CustomActions`.
-- `ProjectAction` — eine konkret ausführbare Action (aus Template oder projekt-spezifisch).
+- `ProjectAction` — eine konkret ausführbare Action (aus Template oder projekt-spezifisch); enthält den für das aktuelle OS aufgelösten Command-String.
 - `ScanRoot` — Root-Pfad für `.git`-Auto-Discovery.
 - `ProjektorConfig` — Aggregat: `Projects`, `ActionTemplates`, `ScanRoots`, `Settings` (Hotkey, Theme, …).
 
@@ -103,25 +103,48 @@ public interface IProjectScanner     // Scan(ScanRoot) → erkannte Projekte (.g
 
 ---
 
-## 5. Command-Ausführung (OS-Weiche)
+## 5. Command-Ausführung
 
-Hinter `IProcessLauncher`. Entscheidung zur Laufzeit per `RuntimeInformation.IsOSPlatform`:
+### Command-Modell (entschieden)
+
+Jede Action hat **separate Commands für Windows und Linux** — keine künstliche Abstraktion. Der richtige Command für das aktuelle OS wird beim Start einmalig aus der Config gelesen.
+
+Ein Command-String kann den optionalen Platzhalter **`{path}`** enthalten, der zur Laufzeit durch den absoluten Projektpfad ersetzt wird:
+
+| Muster | Verwendung | Beispiel |
+|---|---|---|
+| Kein `{path}` | CLI-Tool / Terminal — läuft im Working Directory | `wezterm`, `npm run dev` |
+| Mit `{path}` | GUI-App — öffnet den Ordner als Argument | `code {path}`, `rider {path}` |
+
+Working Directory ist **immer der Projektpfad**, egal ob `{path}` vorhanden oder nicht. Das schadet GUI-Apps nicht und ist für CLI-Tools die eigentliche Kernfunktion.
+
+### Ausführung (immer via Shell-Wrapper)
+
+Beide Fälle (GUI + CLI) werden einheitlich durch den Plattform-Shell-Wrapper gestartet. Das vermeidet eine `launchKind`-Unterscheidung: `cmd.exe` und `bash` suchen den Prozess im `PATH`, starten GUI-Apps korrekt und handhaben Shell-Operatoren (`&&`, Pipes) für CLI-Commands.
 
 ```csharp
+// In ProcessLauncher — command ist bereits {path}-substituiert
 var psi = new ProcessStartInfo {
     WorkingDirectory = project.Path,
-    UseShellExecute = false,
-    CreateNoWindow = true,
+    UseShellExecute  = false,
+    CreateNoWindow   = true,
 };
-if (OperatingSystem.IsWindows()) { psi.FileName = "cmd.exe";  psi.Arguments = $"/c \"{command}\""; }
-else                             { psi.FileName = "/bin/bash"; psi.Arguments = $"-c \"{command}\""; }
+if (OperatingSystem.IsWindows())
+{
+    psi.FileName  = "cmd.exe";
+    psi.Arguments = $"/c \"{command}\"";
+}
+else
+{
+    psi.FileName  = "/bin/bash";
+    psi.Arguments = $"-c \"{command}\"";
+}
 Process.Start(psi);
 ```
 
-**Offene Detailfragen** (für Refinement):
-- GUI-Apps (IDE) vs. Terminal-Commands: Bei GUI-Apps ggf. `UseShellExecute = true` ohne `cmd`-Wrapper sinnvoller. → evtl. Action-Flag ` launchKind: shell | direct`.
-- Argument-Quoting / Injection-Sicherheit bei zusammengesetzten Commands.
-- Fehler-Feedback an UI, wenn `Process.Start` fehlschlägt (Exe nicht gefunden).
+`CreateNoWindow = true` verhindert ein aufblitzendes Konsolenfenster bei GUI-App-Starts über den Shell-Wrapper.
+
+**Offen (Impl-Detail):** Fehler-Feedback an die UI, wenn `Process.Start` fehlschlägt (Exe nicht gefunden, falscher Pfad). Einfaches Try/Catch mit Benachrichtigung im Overlay reicht für v1.
 
 ---
 
@@ -165,22 +188,42 @@ SharpHook-Eckdaten (v7), die das Design bestimmen:
 hotkey = "Alt+Space"
 theme  = "dark"
 
+# Globale Templates — gelten für alle Projekte, sofern nicht deaktiviert.
+# {path} wird zur Laufzeit durch den absoluten Projektpfad ersetzt.
 [[action_templates]]
-id      = "terminal"
-name    = "Terminal hier"
-command = "..."        # OS-spezifisch zur Laufzeit aufgelöst
+id              = "terminal"
+name            = "Terminal hier"
+command_windows = "wt"               # Windows Terminal — öffnet im working dir
+command_linux   = "wezterm"          # kein {path} → läuft im working directory
+
+[[action_templates]]
+id              = "ide"
+name            = "Rider öffnen"
+command_windows = "rider64 {path}"
+command_linux   = "rider {path}"
+
+[[action_templates]]
+id              = "editor"
+name            = "VS Code"
+command_windows = "code {path}"
+command_linux   = "code {path}"
 
 [[projects]]
-name   = "Projektor"
-path   = "~/dev/projektor"
-source = "manual"
-disabled_templates = []
+name               = "Projektor"
+path               = "~/dev/projektor"
+source             = "manual"
+disabled_templates = []              # Template-IDs, die für dieses Projekt deaktiviert sind
+
+# Projekt-spezifische Zusatz-Actions (Overrides oder reine Extras)
+[[projects.actions]]
+id              = "run"
+name            = "Run"
+command_windows = "dotnet run"
+command_linux   = "dotnet run"
 
 [[scan_roots]]
 path = "~/dev"
 ```
-
-> Offen: OS-spezifische Command-Werte pro Template (z.B. `command.windows` / `command.linux`) vs. ein generischer Command mit Platzhaltern. Im Refinement entscheiden.
 
 ---
 
@@ -223,11 +266,14 @@ path = "~/dev"
 
 ## 10. Offene Entscheidungen (vor Implementierung)
 
-1. **MVVM-Lib:** CommunityToolkit.Mvvm (Empfehlung) vs. ReactiveUI.
-2. **Command-Modell:** OS-spezifische Commands pro Template vs. Platzhalter/generisch; `launchKind` (shell vs. direct) ja/nein.
-3. **Default-Hotkey:** global `Alt+Space` vs. plattformabhängiger Default (Linux-Suppression-Lücke).
-4. **DI-Umfang:** voller Generic Host vs. nur `ServiceCollection`.
-5. **Scanner-Timing:** Auto-Scan bei Start / on-demand / im Hintergrund mit Cache.
+| # | Frage | Empfehlung |
+|---|---|---|
+| 1 | **MVVM-Lib:** CommunityToolkit.Mvvm vs. ReactiveUI | CommunityToolkit — kein Rx-Bedarf sichtbar |
+| 2 | **Default-Hotkey:** global `Alt+Space` vs. plattformabhängiger Default | `Alt+Space` global; Suppression-Lücke auf Linux dokumentieren, kein anderer Default nötig |
+| 3 | **DI-Umfang:** voller Generic Host vs. nur `ServiceCollection` | Nur `ServiceCollection` — kein Hosted-Service-Overhead für diesen Use Case |
+| 4 | **Scanner-Timing:** Start / on-demand / Hintergrund mit Cache | On-demand (Button in Settings) für v1; Auto-Start als einfache Option dazu |
+
+> Command-Modell (§5) und TOML-Schema (§7) sind entschieden.
 
 ---
 

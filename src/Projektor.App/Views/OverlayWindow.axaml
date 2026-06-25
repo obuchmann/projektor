@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Projektor.App.ViewModels"
+        x:Class="Projektor.App.Views.OverlayWindow"
+        Title="Projektor"
+        Width="600"
+        Height="400"
+        WindowStartupLocation="CenterScreen">
+
+  <Window.DataContext>
+    <vm:OverlayViewModel />
+  </Window.DataContext>
+
+  <StackPanel Margin="16" Spacing="8">
+    <TextBlock Text="Projektor" FontSize="24" FontWeight="Bold" />
+    <TextBlock Text="Placeholder — Overlay UI kommt im ersten Build-Slice." />
+  </StackPanel>
+
+</Window>

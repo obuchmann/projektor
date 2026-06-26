@@ -3,8 +3,163 @@
              x:Class="Projektor.App.App"
              RequestedThemeVariant="Dark">
 
+  <Application.Resources>
+    <!-- ===== Palette (Catppuccin Mocha) ===== -->
+    <Color x:Key="AccentColor">#CBA6F7</Color>
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="GlassTint" Color="#1E1E2E" />
+    <SolidColorBrush x:Key="FieldBrush" Color="#26273A" />
+    <SolidColorBrush x:Key="FieldFocusBrush" Color="#2B2D44" />
+    <SolidColorBrush x:Key="CardBrush" Color="#24263A" />
+    <SolidColorBrush x:Key="CardHoverBrush" Color="#2E3050" />
+    <SolidColorBrush x:Key="CardPressedBrush" Color="#1C1D2E" />
+    <SolidColorBrush x:Key="KbdBrush" Color="#2A2C40" />
+
+    <!-- Strokes / accents -->
+    <SolidColorBrush x:Key="StrokeBrush" Color="#3A3C52" />
+    <SolidColorBrush x:Key="StrokeStrongBrush" Color="#4A4C66" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#CBA6F7" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#3A2F55" />
+    <SolidColorBrush x:Key="AccentSoftHoverBrush" Color="#473A66" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#2A2C42" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextBrush" Color="#CDD6F4" />
+    <SolidColorBrush x:Key="SubtextBrush" Color="#A6ADC8" />
+    <SolidColorBrush x:Key="MutedBrush" Color="#6C7086" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#F38BA8" />
+
+    <!-- Soft outer glow / window edge highlight -->
+    <LinearGradientBrush x:Key="GlassEdgeBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#33FFFFFF" />
+      <GradientStop Offset="0.4" Color="#14FFFFFF" />
+      <GradientStop Offset="1" Color="#0AFFFFFF" />
+    </LinearGradientBrush>
+  </Application.Resources>
+
   <Application.Styles>
     <FluentTheme />
+
+    <!-- ===== Search box ===== -->
+    <Style Selector="TextBox.search">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="MinHeight" Value="54" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="18,12" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style Selector="TextBox.search /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource FieldBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="TextBox.search:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource FieldFocusBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource StrokeStrongBrush}" />
+    </Style>
+    <Style Selector="TextBox.search:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource FieldFocusBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <!-- ===== Project list ===== -->
+    <Style Selector="ListBox.projects">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.projects ListBoxItem">
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="14,10" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="ListBox.projects ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.12" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="ListBox.projects ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+    </Style>
+    <Style Selector="ListBox.projects ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+    </Style>
+    <Style Selector="ListBox.projects ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentSoftHoverBrush}" />
+    </Style>
+
+    <!-- ===== Action buttons ===== -->
+    <Style Selector="Button.action">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="14,11" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="Background" Value="{StaticResource CardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.action /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CardHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.action:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CardPressedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource StrokeStrongBrush}" />
+    </Style>
+
+    <!-- ===== Section labels ===== -->
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Margin" Value="4,0,0,8" />
+    </Style>
+
+    <!-- ===== Keyboard hint chips ===== -->
+    <Style Selector="Border.kbd">
+      <Setter Property="Background" Value="{StaticResource KbdBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="7,2" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.kbd > TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{StaticResource SubtextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+
+    <!-- ===== Slim scrollbars ===== -->
+    <Style Selector="ScrollBar:vertical">
+      <Setter Property="Width" Value="6" />
+    </Style>
   </Application.Styles>
 
 </Application>

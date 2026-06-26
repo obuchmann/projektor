@@ -47,6 +47,24 @@ dotnet test projektor.slnx               # Unit- & Integrationstests
 `Alt+Space` öffnet das Overlay. Beim ersten Start wird eine Default-Config angelegt
 (`~/.config/projektor/projektor.toml` bzw. `%APPDATA%\Projektor\projektor.toml`).
 
+## Builds & Releases
+
+Jeder Push/PR baut und testet via CI auf Windows + Linux (siehe `.github/workflows/ci.yml`).
+
+Ein Git-Tag `v*` löst einen Release-Build aus (`.github/workflows/release.yml`):
+
+- Self-contained, Single-File-Builds für `win-x64` und `linux-x64`
+- Paketiert als `projektor-<version>-win-x64.zip` und `projektor-<version>-linux-x64.tar.gz`
+- Automatisch als GitHub Release mit den Builds als Assets veröffentlicht
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Die Builds lassen sich auch ohne Release über `workflow_dispatch` erzeugen — sie liegen dann
+als Workflow-Artifacts zum Download bereit.
+
 ## Docs
 
 - [PRD — Product Requirements Document](Docs/PRD.md)

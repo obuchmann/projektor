@@ -60,20 +60,15 @@ public sealed class ProcessLauncher : IProcessLauncher
 
     private void WireUpExitLogging(System.Diagnostics.Process process, string actionName, int pid)
     {
-        try
-        {
-            process.EnableRaisingEvents = true;
-        }
-        catch (Exception ex)
-        {
-            // Best effort: if we cannot observe the exit, still release the handle.
-            _logger.LogDebug(ex, "Exit-Überwachung für Action '{Action}' (PID {Pid}) nicht möglich.", actionName, pid);
-            process.Dispose();
-            return;
-        }
+        // Guards against the handler running twice (e.g. the Exited event and any defensive
+        // manual invocation racing) — the body must dispose exactly once.
+        var handled = 0;
 
-        process.Exited += (_, _) =>
+        void OnExited(object? _, EventArgs __)
         {
+            if (Interlocked.Exchange(ref handled, 1) != 0)
+                return;
+
             try
             {
                 var code = process.ExitCode;
@@ -92,7 +87,24 @@ public sealed class ProcessLauncher : IProcessLauncher
             {
                 process.Dispose();
             }
-        };
+        }
+
+        // Subscribe BEFORE enabling events: EnableRaisingEvents registers the exit watch, and a
+        // fast-exiting process would otherwise raise Exited (a one-shot event) before the handler
+        // is attached — losing the exit log and leaking the handle.
+        process.Exited += OnExited;
+
+        try
+        {
+            process.EnableRaisingEvents = true;
+        }
+        catch (Exception ex)
+        {
+            // Best effort: if we cannot observe the exit, still release the handle.
+            _logger.LogDebug(ex, "Exit-Überwachung für Action '{Action}' (PID {Pid}) nicht möglich.", actionName, pid);
+            process.Exited -= OnExited;
+            process.Dispose();
+        }
     }
 
     internal static ProcessStartInfo BuildStartInfo(string command, string workingDirectory)

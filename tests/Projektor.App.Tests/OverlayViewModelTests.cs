@@ -25,12 +25,14 @@ public sealed class OverlayViewModelTests
         var launcher = new FakeLauncher();
         var vm = new OverlayViewModel(new ActionResolver(), new ProjectFilter(), launcher);
 
+        // Commands are intentionally identical across OS so assertions hold on Windows + Linux
+        // (ActionResolver picks command_windows on Windows, command_linux otherwise).
         var config = new ProjektorConfig(
             ActionTemplates:
             [
-                new ActionTemplate("terminal", "Terminal", "wt", "x-terminal-emulator"),
+                new ActionTemplate("terminal", "Terminal", "term", "term"),
                 new ActionTemplate("editor", "Editor", "code {path}", "code {path}"),
-                new ActionTemplate("files", "Files", "explorer .", "xdg-open ."),
+                new ActionTemplate("files", "Files", "files", "files"),
             ],
             Projects:
             [
@@ -84,7 +86,7 @@ public sealed class OverlayViewModelTests
 
         vm.LaunchFirst();
 
-        Assert.Equal("x-terminal-emulator", Assert.Single(launcher.Launched).Command);
+        Assert.Equal("term", Assert.Single(launcher.Launched).Command);
     }
 
     [Fact]
@@ -113,7 +115,7 @@ public sealed class OverlayViewModelTests
     public void Launch_Failure_SetsStatusMessageAndDoesNotRequestHide()
     {
         var (vm, launcher) = Build();
-        launcher.FailCommand = "x-terminal-emulator"; // action 1
+        launcher.FailCommand = "term"; // action 1
         var raised = false;
         vm.LaunchRequested += (_, _) => raised = true;
 

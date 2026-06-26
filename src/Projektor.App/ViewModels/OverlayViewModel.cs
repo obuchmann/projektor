@@ -11,7 +11,8 @@ namespace Projektor.App.ViewModels;
 
 /// <summary>
 /// Drives the overlay: filter projects as the user types, resolve the selected project's
-/// effective actions, and launch the chosen action in the project's working directory.
+/// effective actions (numbered), and launch them in the project's working directory.
+/// Launch entry points (click, Alt+N, Enter, Shift+Enter) all funnel through <see cref="LaunchOne"/>.
 /// </summary>
 public sealed partial class OverlayViewModel : ObservableObject
 {
@@ -21,7 +22,7 @@ public sealed partial class OverlayViewModel : ObservableObject
     private ProjektorConfig _config = ProjektorConfig.Empty;
 
     public ObservableCollection<Project> Projects { get; } = [];
-    public ObservableCollection<ProjectAction> Actions { get; } = [];
+    public ObservableCollection<ActionItem> Actions { get; } = [];
 
     [ObservableProperty]
     private string _searchText = "";
@@ -30,12 +31,9 @@ public sealed partial class OverlayViewModel : ObservableObject
     private Project? _selectedProject;
 
     [ObservableProperty]
-    private ProjectAction? _selectedAction;
-
-    [ObservableProperty]
     private string? _statusMessage;
 
-    /// <summary>Raised after a successful launch so the host can hide the overlay.</summary>
+    /// <summary>Raised after at least one successful launch so the host can hide the overlay.</summary>
     public event EventHandler? LaunchRequested;
 
     public OverlayViewModel(ActionResolver resolver, ProjectFilter filter, IProcessLauncher launcher)
@@ -78,35 +76,65 @@ public sealed partial class OverlayViewModel : ObservableObject
         Actions.Clear();
 
         if (SelectedProject is null)
-        {
-            SelectedAction = null;
             return;
-        }
 
         // Resolve against an absolute path so {path} substitution and the working directory match.
         var expanded = SelectedProject with { Path = PathUtil.ExpandHome(SelectedProject.Path) };
+        var number = 1;
         foreach (var action in _resolver.Resolve(_config, expanded))
-            Actions.Add(action);
-
-        SelectedAction = Actions.Count > 0 ? Actions[0] : null;
+            Actions.Add(new ActionItem(number++, action));
     }
 
+    /// <summary>Click handler binding target — launches the clicked action.</summary>
     [RelayCommand]
-    private void Launch(ProjectAction? action)
+    private void Launch(ActionItem? item)
     {
-        action ??= SelectedAction;
-        var project = SelectedProject;
-        if (action is null || project is null)
+        if (item is null)
             return;
+        if (LaunchOne(item.Action))
+            LaunchRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Launches the first action (plain Enter).</summary>
+    public void LaunchFirst() => LaunchByIndex(1);
+
+    /// <summary>Launches the action at the given 1-based position (Alt+N).</summary>
+    public void LaunchByIndex(int oneBasedIndex)
+    {
+        if (oneBasedIndex < 1 || oneBasedIndex > Actions.Count)
+            return;
+        if (LaunchOne(Actions[oneBasedIndex - 1].Action))
+            LaunchRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Launches every action of the selected project (Shift+Enter).</summary>
+    public void LaunchAll()
+    {
+        if (Actions.Count == 0)
+            return;
+
+        var any = false;
+        foreach (var item in Actions)
+            any |= LaunchOne(item.Action);
+
+        if (any)
+            LaunchRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool LaunchOne(ProjectAction action)
+    {
+        if (SelectedProject is null)
+            return false;
 
         try
         {
-            _launcher.Launch(action, PathUtil.ExpandHome(project.Path));
-            LaunchRequested?.Invoke(this, EventArgs.Empty);
+            _launcher.Launch(action, PathUtil.ExpandHome(SelectedProject.Path));
+            return true;
         }
         catch (ProcessLaunchException ex)
         {
             StatusMessage = ex.Message;
+            return false;
         }
     }
 }

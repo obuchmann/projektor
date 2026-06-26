@@ -5,8 +5,8 @@
         x:Class="Projektor.App.Views.OverlayWindow"
         x:DataType="vm:OverlayViewModel"
         Title="Projektor"
-        Width="680"
-        Height="420"
+        Width="720"
+        Height="440"
         CanResize="False"
         ShowInTaskbar="False"
         Topmost="True"
@@ -32,6 +32,12 @@
                  IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                  Text="{Binding StatusMessage}" />
 
+      <TextBlock DockPanel.Dock="Bottom"
+                 Margin="0,8,0,0"
+                 FontSize="11"
+                 Foreground="#6C7086"
+                 Text="Klick = starten · Alt+1…9 = Tool · Enter = Tool 1 · Shift+Enter = alle · Esc = schließen" />
+
       <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
 
         <ListBox Grid.Column="0"
@@ -48,19 +54,32 @@
           </ListBox.ItemTemplate>
         </ListBox>
 
-        <ListBox Grid.Column="1"
-                 x:Name="ActionList"
-                 ItemsSource="{Binding Actions}"
-                 SelectedItem="{Binding SelectedAction}">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="models:ProjectAction">
-              <StackPanel Margin="2">
-                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Command}" FontSize="11" Foreground="#9399B2" />
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <ScrollViewer Grid.Column="1">
+          <ItemsControl ItemsSource="{Binding Actions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ActionItem">
+                <Button Margin="0,0,0,6"
+                        Padding="10,8"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Command="{Binding $parent[ItemsControl].((vm:OverlayViewModel)DataContext).LaunchCommand}"
+                        CommandParameter="{Binding}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0">
+                      <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Command}" FontSize="11" Foreground="#9399B2" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="#6C7086"
+                               Text="{Binding ShortcutLabel}" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
 
       </Grid>
 

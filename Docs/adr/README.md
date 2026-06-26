@@ -16,6 +16,7 @@ sie die Struktur prägt oder auf einer Annahme beruht, die später überprüft w
 | [0008](0008-per-project-actions-single-command.md) | Pro-Projekt-Actions sind single-command in v1 | Accepted |
 | [0009](0009-windows-autostart-registry.md) | Windows-Autostart via Registry-Run-Key statt `.lnk` | Accepted |
 | [0010](0010-toml-block-style-writer.md) | Eigener TOML-Writer für Block-Style-Output | Accepted |
+| [0011](0011-launch-interaction-model.md) | Launch-Interaktionsmodell & Windows-Fokus | Accepted |
 
 ## Template
 

@@ -27,17 +27,21 @@ Log: `projektor.log` im selben Ordner.
 | # | Schritt | Erwartung |
 |---|---|---|
 | 1 | App starten | Kein Fenster sichtbar; Tray-Icon erscheint; Log: "Projektor gestartet" |
-| 2 | `Alt+Space` drücken | Overlay erscheint zentriert, Suchfeld hat Fokus |
+| 2 | `Alt+Space` drücken | Overlay erscheint zentriert, **Suchfeld hat Tastaturfokus** |
 | 3 | (Windows) Schritt 2 | **Kein** Fenster-Systemmenü poppt auf (Suppression greift) |
 | 4 | Projektnamen tippen | Projektliste filtert live (case-insensitive Contains) |
-| 5 | Projekt auswählen | Rechts erscheinen die effektiven Actions des Projekts |
-| 6 | Action wählen + `Enter` | Action startet im Projekt-Ordner (z.B. Terminal/Editor öffnet) |
-| 7 | Nach Launch | Overlay verschwindet |
-| 8 | `Alt+Space`, dann `Esc` | Overlay öffnet und schließt wieder |
-| 9 | Overlay offen, woanders klicken | Overlay verschwindet (Fokusverlust) |
-| 10 | TOML extern editieren (vim) | Änderung wird ohne Neustart übernommen (FileSystemWatcher) |
-| 11 | Tray → "Config bearbeiten" | TOML öffnet im Default-Editor |
-| 12 | Tray → "Beenden" | Prozess endet sauber, Tray-Icon verschwindet |
+| 5 | Projekt auswählen | Rechts erscheinen die nummerierten Actions (Alt+1, Alt+2, …) |
+| 6 | **Klick** auf eine Action | Action startet im Projekt-Ordner; Overlay verschwindet |
+| 7 | `Alt+Space` → **Alt+2** | Tool 2 des Projekts startet |
+| 8 | `Alt+Space` → **Enter** | Tool 1 startet |
+| 9 | `Alt+Space` → **Shift+Enter** | **alle** Tools des Projekts starten |
+| 10 | `Alt+Space`, dann `Esc` | Overlay öffnet und schließt wieder |
+| 11 | Overlay offen, woanders klicken | Overlay verschwindet (Fokusverlust) |
+| 12 | TOML extern editieren (vim) | Änderung wird ohne Neustart übernommen (FileSystemWatcher) |
+| 13 | Tray → "Config bearbeiten" | TOML öffnet im Default-Editor |
+| 14 | Tray → "Beenden" | Prozess endet sauber, Tray-Icon verschwindet |
+
+> Launch-Modell und Windows-Fokus: siehe [ADR-0011](adr/0011-launch-interaction-model.md).
 
 ## Fehlerfälle
 

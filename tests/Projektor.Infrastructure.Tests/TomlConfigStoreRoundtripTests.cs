@@ -129,6 +129,46 @@ public sealed class TomlConfigStoreRoundtripTests : IDisposable
     }
 
     [Fact]
+    public void Save_TerminalFlag_RoundtripsForTemplateAndCustomAction()
+    {
+        var path = TempFile();
+        var original = new ProjektorConfig(
+            ActionTemplates: [new ActionTemplate("dev", "Dev Server", "npm run dev", "npm run dev", Terminal: true)],
+            Projects:
+            [
+                new Project("MyApp", "/dev/myapp", ProjectSource.Manual,
+                    DisabledTemplateIds: [],
+                    CustomActions: [new ProjectAction("watch", "Watch", "dotnet watch", Terminal: true)]),
+            ],
+            ScanRoots: [],
+            Settings: new AppSettings());
+
+        var store = new TomlConfigStore(path);
+        store.Save(original);
+        var loaded = store.Load();
+
+        Assert.True(loaded.ActionTemplates[0].Terminal);
+        Assert.True(loaded.Projects[0].CustomActions[0].Terminal);
+    }
+
+    [Fact]
+    public void Save_NonTerminalAction_OmitsTerminalKey()
+    {
+        var path = TempFile();
+        var config = new ProjektorConfig(
+            ActionTemplates: [new ActionTemplate("ide", "Rider", "rider64 {path}", "rider {path}")],
+            Projects: [],
+            ScanRoots: [],
+            Settings: new AppSettings());
+
+        new TomlConfigStore(path).Save(config);
+        var text = File.ReadAllText(path);
+
+        // The default (false) stays out of the file to keep configs clean.
+        Assert.DoesNotContain("terminal", text);
+    }
+
+    [Fact]
     public void Save_UsesHeaderBlockStyle_NotInlineTables()
     {
         var path = TempFile();

@@ -5,4 +5,5 @@ public sealed record ActionTemplate(
     string Name,
     string? CommandWindows,
     string? CommandLinux,
-    string? Icon = null);
+    string? Icon = null,
+    bool Terminal = false);

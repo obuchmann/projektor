@@ -62,13 +62,26 @@ Die Kernregel: *effektive Actions = (globale Templates − deaktivierte) + proje
 
 ## 3. Test-Setup
 
-Tests laufen in `tests/Projektor.Core.Tests/` (xUnit). Keine externen Abhängigkeiten, kein Dateisystem außer bei expliziten TOML-Roundtrip-Tests (temporäres Verzeichnis via `Path.GetTempPath()`).
+Tests laufen in `tests/Projektor.Core.Tests/` und `tests/Projektor.Infrastructure.Tests/` (xUnit v3).
+Keine externen Abhängigkeiten, kein Dateisystem außer bei expliziten TOML-Roundtrip- und
+Scanner-Tests (temporäres Verzeichnis via `Path.GetTempPath()`).
 
 ```
-dotnet test tests/Projektor.Core.Tests/
+dotnet test projektor.slnx
 ```
 
-CI-Ziel (wenn Pipeline aufgebaut): Tests müssen auf Windows und Linux grün sein.
+Aktueller Stand: **36 Tests grün** (15 Core, 21 Infrastructure). Abgedeckt sind neben Core
+(ActionResolver, ProjectFilter, Command-Substitution) auch der TOML-Roundtrip inkl. Block-Style,
+der Hotkey-Parser, der OS-Shell-Argumentbau des ProcessLaunchers und der Git-Scanner.
+
+CI baut und testet auf Windows und Linux (`.github/workflows/ci.yml`). Die GUI/Hotkey-App wird in
+CI nur gebaut, nicht ausgeführt (kein Display, kein `/dev/input`).
+
+### Manueller Smoke-Test
+
+Globaler Tastendruck, Alt+Space-Suppression (Windows), Overlay-Rendering, realer `Process.Start`
+und die Wayland-`input`-Gruppe lassen sich nicht headless prüfen — dafür gibt es eine Checkliste:
+[Docs/SmokeTest.md](SmokeTest.md). Hintergrund: [ADR-0006](adr/0006-mvp-vertical-slice-scope.md).
 
 ---
 

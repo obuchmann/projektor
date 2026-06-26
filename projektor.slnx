@@ -4,4 +4,5 @@
   <Project Path="src/Projektor.App/Projektor.App.csproj" />
   <Project Path="tests/Projektor.Core.Tests/Projektor.Core.Tests.csproj" />
   <Project Path="tests/Projektor.Infrastructure.Tests/Projektor.Infrastructure.Tests.csproj" />
+  <Project Path="tests/Projektor.App.Tests/Projektor.App.Tests.csproj" />
 </Solution>

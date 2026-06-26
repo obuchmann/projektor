@@ -24,7 +24,7 @@ public sealed class ProcessLauncher : IProcessLauncher
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        var psi = BuildStartInfo(action.Command, workingDirectory);
+        var psi = BuildStartInfo(action.Command, workingDirectory, action.Terminal);
 
         _logger.LogInformation(
             "Starte Action '{Action}': command={Command} | shell={Shell} {ShellArgs} | cwd={Cwd}",
@@ -107,32 +107,81 @@ public sealed class ProcessLauncher : IProcessLauncher
         }
     }
 
-    internal static ProcessStartInfo BuildStartInfo(string command, string workingDirectory)
+    internal static ProcessStartInfo BuildStartInfo(string command, string workingDirectory, bool terminal = false)
     {
         var psi = new ProcessStartInfo
         {
             WorkingDirectory = workingDirectory,
-            UseShellExecute = false,
-            CreateNoWindow = true,
         };
 
         if (OperatingSystem.IsWindows())
         {
-            psi.FileName = "cmd.exe";
-            // /s forces cmd to strip exactly the outer quotes and treat the rest verbatim,
-            // which makes quoting predictable regardless of the command's contents.
-            psi.Arguments = $"/s /c \"{command}\"";
+            if (terminal)
+            {
+                BuildWindowsTerminalStartInfo(psi, command, workingDirectory);
+            }
+            else
+            {
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                psi.FileName = "cmd.exe";
+                // /s forces cmd to strip exactly the outer quotes and treat the rest verbatim,
+                // which makes quoting predictable regardless of the command's contents.
+                psi.Arguments = $"/s /c \"{command}\"";
+            }
         }
         else
         {
-            psi.FileName = "/bin/bash";
-            // Pass the command as a single, verbatim argv element via ArgumentList so it is not
-            // re-parsed/mangled by the platform's argument-string tokenizer (backslashes, quotes).
-            psi.ArgumentList.Add("-c");
-            psi.ArgumentList.Add(command);
+            if (terminal)
+            {
+                BuildLinuxTerminalStartInfo(psi, command);
+            }
+            else
+            {
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                psi.FileName = "/bin/bash";
+                // Pass the command as a single, verbatim argv element via ArgumentList so it is not
+                // re-parsed/mangled by the platform's argument-string tokenizer (backslashes, quotes).
+                psi.ArgumentList.Add("-c");
+                psi.ArgumentList.Add(command);
+            }
         }
 
         return psi;
+    }
+
+    /// <summary>
+    /// Runs the tool inside a visible Windows Terminal window. The command goes through
+    /// <c>cmd /k</c> so the shell resolves <c>.cmd</c>/<c>.bat</c> shims (npm, dotnet tools, …)
+    /// and the window stays open after the tool exits, keeping its output readable. <c>wt -d</c>
+    /// sets the new tab's working directory; <see cref="ProcessStartInfo.UseShellExecute"/> lets
+    /// ShellExecute resolve the <c>wt.exe</c> app-execution alias reliably.
+    /// </summary>
+    private static void BuildWindowsTerminalStartInfo(ProcessStartInfo psi, string command, string workingDirectory)
+    {
+        psi.UseShellExecute = true;
+        psi.FileName = "wt.exe";
+        psi.ArgumentList.Add("-d");
+        psi.ArgumentList.Add(workingDirectory);
+        psi.ArgumentList.Add("cmd");
+        psi.ArgumentList.Add("/k");
+        psi.ArgumentList.Add(command);
+    }
+
+    /// <summary>
+    /// Opens the platform's default terminal and runs the tool inside it. <c>bash -c
+    /// '&lt;cmd&gt;; exec bash'</c> keeps the terminal open after the tool exits so its output
+    /// stays visible. The spawned shell inherits the working directory from the start info.
+    /// </summary>
+    private static void BuildLinuxTerminalStartInfo(ProcessStartInfo psi, string command)
+    {
+        psi.UseShellExecute = false;
+        psi.FileName = "x-terminal-emulator";
+        psi.ArgumentList.Add("-e");
+        psi.ArgumentList.Add("bash");
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add($"{command}; exec bash");
     }
 
     private static string DescribeArguments(ProcessStartInfo psi) =>

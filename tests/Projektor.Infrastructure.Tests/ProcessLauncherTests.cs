@@ -49,4 +49,28 @@ public sealed class ProcessLauncherTests
             Assert.Equal(new[] { "-c", command }, psi.ArgumentList);
         }
     }
+
+    [Fact]
+    public void BuildStartInfo_Terminal_RunsCommandInsideVisibleTerminal()
+    {
+        var psi = ProcessLauncher.BuildStartInfo("npm run dev", "/dev/myapp", terminal: true);
+
+        Assert.Equal("/dev/myapp", psi.WorkingDirectory);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            // wt opens a real window; cmd /k keeps it open and resolves .cmd shims (npm, …).
+            Assert.Equal("wt.exe", psi.FileName);
+            Assert.True(psi.UseShellExecute);
+            Assert.False(psi.CreateNoWindow);
+            Assert.Equal(new[] { "-d", "/dev/myapp", "cmd", "/k", "npm run dev" }, psi.ArgumentList);
+        }
+        else
+        {
+            // The default terminal runs the tool; `exec bash` keeps the window open afterwards.
+            Assert.Equal("x-terminal-emulator", psi.FileName);
+            Assert.False(psi.UseShellExecute);
+            Assert.Equal(new[] { "-e", "bash", "-c", "npm run dev; exec bash" }, psi.ArgumentList);
+        }
+    }
 }

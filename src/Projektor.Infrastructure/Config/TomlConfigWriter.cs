@@ -31,6 +31,8 @@ internal static class TomlConfigWriter
                 KeyValue(sb, "command_linux", template.CommandLinux);
             if (template.Icon is not null)
                 KeyValue(sb, "icon", template.Icon);
+            if (template.Terminal)
+                BoolValue(sb, "terminal", template.Terminal);
         }
 
         foreach (var project in config.Projects)
@@ -49,6 +51,8 @@ internal static class TomlConfigWriter
                 KeyValue(sb, "id", action.Id);
                 KeyValue(sb, "name", action.Name);
                 KeyValue(sb, "command", action.Command);
+                if (action.Terminal)
+                    BoolValue(sb, "terminal", action.Terminal);
             }
         }
 
@@ -64,6 +68,9 @@ internal static class TomlConfigWriter
 
     private static void KeyValue(StringBuilder sb, string key, string value) =>
         sb.Append(key).Append(" = ").AppendLine(Quote(value));
+
+    private static void BoolValue(StringBuilder sb, string key, bool value) =>
+        sb.Append(key).Append(" = ").AppendLine(value ? "true" : "false");
 
     private static void StringArray(StringBuilder sb, string key, IReadOnlyList<string> values)
     {

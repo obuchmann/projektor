@@ -208,6 +208,13 @@ name            = "VS Code"
 command_windows = "code {path}"
 command_linux   = "code {path}"
 
+[[action_templates]]
+id              = "dev"
+name            = "Dev Server"
+command_windows = "npm run dev"
+command_linux   = "npm run dev"
+terminal        = true               # läuft in sichtbarem Terminal-Fenster (CLI-Tool, default false)
+
 [[projects]]
 name               = "Projektor"
 path               = "~/dev/projektor"

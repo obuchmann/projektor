@@ -30,13 +30,15 @@ public sealed class ActionResolver
                 continue; // Action not available on this platform.
 
             indexById[template.Id] = result.Count;
-            result.Add(new ProjectAction(template.Id, template.Name, SubstituteCommand(command, project.Path)));
+            result.Add(new ProjectAction(
+                template.Id, template.Name, SubstituteCommand(command, project.Path), template.Terminal));
         }
 
         // Custom actions: override the template with the same Id, otherwise append.
         foreach (var custom in project.CustomActions)
         {
-            var resolved = new ProjectAction(custom.Id, custom.Name, SubstituteCommand(custom.Command, project.Path));
+            var resolved = new ProjectAction(
+                custom.Id, custom.Name, SubstituteCommand(custom.Command, project.Path), custom.Terminal);
             if (indexById.TryGetValue(custom.Id, out var existing))
                 result[existing] = resolved;
             else

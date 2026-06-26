@@ -57,7 +57,10 @@ internal sealed class ActionTemplateDto
     [TomlPropertyName("icon")]
     public string? Icon { get; set; }
 
-    public ActionTemplate ToModel() => new(Id, Name, CommandWindows, CommandLinux, Icon);
+    [TomlPropertyName("terminal")]
+    public bool Terminal { get; set; }
+
+    public ActionTemplate ToModel() => new(Id, Name, CommandWindows, CommandLinux, Icon, Terminal);
 }
 
 internal sealed class ProjectDto
@@ -98,7 +101,10 @@ internal sealed class ProjectActionDto
     [TomlPropertyName("command")]
     public string Command { get; set; } = "";
 
-    public ProjectAction ToModel() => new(Id, Name, Command);
+    [TomlPropertyName("terminal")]
+    public bool Terminal { get; set; }
+
+    public ProjectAction ToModel() => new(Id, Name, Command, Terminal);
 }
 
 internal sealed class ScanRootDto

@@ -99,4 +99,49 @@ public sealed class TomlConfigStoreRoundtripTests : IDisposable
         Assert.Equal(original.ScanRoots[0].Path, loaded.ScanRoots[0].Path);
         Assert.Equal(original.Settings.Hotkey, loaded.Settings.Hotkey);
     }
+
+    [Fact]
+    public void Save_ProjectWithDisabledTemplatesAndCustomActions_Roundtrips()
+    {
+        var path = TempFile();
+        var original = new ProjektorConfig(
+            ActionTemplates: [new ActionTemplate("ide", "Rider", "rider64 {path}", "rider {path}")],
+            Projects:
+            [
+                new Project("MyApp", "/dev/my app", ProjectSource.Scanned,
+                    DisabledTemplateIds: ["ide"],
+                    CustomActions: [new ProjectAction("run", "Run", "dotnet run")]),
+            ],
+            ScanRoots: [],
+            Settings: new AppSettings());
+
+        var store = new TomlConfigStore(path);
+        store.Save(original);
+        var loaded = store.Load();
+
+        var project = Assert.Single(loaded.Projects);
+        Assert.Equal(ProjectSource.Scanned, project.Source);
+        Assert.Equal("/dev/my app", project.Path);
+        Assert.Equal(["ide"], project.DisabledTemplateIds);
+        var action = Assert.Single(project.CustomActions);
+        Assert.Equal("run", action.Id);
+        Assert.Equal("dotnet run", action.Command);
+    }
+
+    [Fact]
+    public void Save_UsesHeaderBlockStyle_NotInlineTables()
+    {
+        var path = TempFile();
+        var config = new ProjektorConfig(
+            ActionTemplates: [new ActionTemplate("ide", "Rider", "rider64 {path}", "rider {path}")],
+            Projects: [],
+            ScanRoots: [],
+            Settings: new AppSettings());
+
+        new TomlConfigStore(path).Save(config);
+        var text = File.ReadAllText(path);
+
+        Assert.Contains("[[action_templates]]", text);
+        Assert.DoesNotContain("action_templates = [{", text);
+    }
 }

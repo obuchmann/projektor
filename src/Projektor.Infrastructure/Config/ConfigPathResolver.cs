@@ -1,6 +1,6 @@
 namespace Projektor.Infrastructure.Config;
 
-internal static class ConfigPathResolver
+public static class ConfigPathResolver
 {
     private const string FileName = "projektor.toml";
     private const string AppName = "Projektor";

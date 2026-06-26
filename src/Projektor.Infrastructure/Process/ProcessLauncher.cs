@@ -6,10 +6,30 @@ namespace Projektor.Infrastructure.Process;
 
 public sealed class ProcessLauncher : IProcessLauncher
 {
-    public void Launch(ProjectAction action, string workingDirectory) =>
-        throw new NotImplementedException();
+    /// <summary>
+    /// Launches the action's command through the platform shell wrapper with the working
+    /// directory set to the project path. Throws <see cref="ProcessLaunchException"/> when the
+    /// process cannot be started so the UI can surface the failure.
+    /// </summary>
+    public void Launch(ProjectAction action, string workingDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(action);
 
-    private static System.Diagnostics.ProcessStartInfo BuildStartInfo(string command, string workingDirectory)
+        var psi = BuildStartInfo(action.Command, workingDirectory);
+        try
+        {
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process is null)
+                throw new ProcessLaunchException($"Konnte Action '{action.Name}' nicht starten.");
+        }
+        catch (Exception ex) when (ex is not ProcessLaunchException)
+        {
+            throw new ProcessLaunchException(
+                $"Konnte Action '{action.Name}' nicht starten: {ex.Message}", ex);
+        }
+    }
+
+    internal static ProcessStartInfo BuildStartInfo(string command, string workingDirectory)
     {
         var psi = new ProcessStartInfo
         {

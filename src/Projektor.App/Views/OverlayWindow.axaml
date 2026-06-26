@@ -1,19 +1,70 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Projektor.App.ViewModels"
+        xmlns:models="using:Projektor.Core.Models"
         x:Class="Projektor.App.Views.OverlayWindow"
+        x:DataType="vm:OverlayViewModel"
         Title="Projektor"
-        Width="600"
-        Height="400"
+        Width="680"
+        Height="420"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowDecorations="None"
+        Background="#1E1E2E"
         WindowStartupLocation="CenterScreen">
 
-  <Window.DataContext>
-    <vm:OverlayViewModel />
-  </Window.DataContext>
+  <Border BorderBrush="#45475A"
+          BorderThickness="1"
+          Padding="16">
+    <DockPanel>
 
-  <StackPanel Margin="16" Spacing="8">
-    <TextBlock Text="Projektor" FontSize="24" FontWeight="Bold" />
-    <TextBlock Text="Placeholder — Overlay UI kommt im ersten Build-Slice." />
-  </StackPanel>
+      <TextBox x:Name="SearchBox"
+               DockPanel.Dock="Top"
+               PlaceholderText="Projekt suchen…"
+               FontSize="20"
+               Margin="0,0,0,12"
+               Text="{Binding SearchText}" />
+
+      <TextBlock DockPanel.Dock="Bottom"
+                 Margin="0,12,0,0"
+                 Foreground="#F38BA8"
+                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                 Text="{Binding StatusMessage}" />
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+
+        <ListBox Grid.Column="0"
+                 x:Name="ProjectList"
+                 ItemsSource="{Binding Projects}"
+                 SelectedItem="{Binding SelectedProject}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="models:Project">
+              <StackPanel Margin="2">
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Path}" FontSize="11" Foreground="#9399B2" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ListBox Grid.Column="1"
+                 x:Name="ActionList"
+                 ItemsSource="{Binding Actions}"
+                 SelectedItem="{Binding SelectedAction}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="models:ProjectAction">
+              <StackPanel Margin="2">
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Command}" FontSize="11" Foreground="#9399B2" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+      </Grid>
+
+    </DockPanel>
+  </Border>
 
 </Window>

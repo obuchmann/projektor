@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to build (without leading v, e.g. 1.2.3)"
-        required: false
-        default: "0.0.0-dev"
+        description: "Version to release (without leading v, e.g. 0.2.0-rc.1)"
+        required: true
+        default: "0.2.0-rc.1"
 
 permissions:
   contents: write
@@ -93,7 +93,6 @@ jobs:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
     permissions:
       contents: write
 
@@ -104,26 +103,33 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Determine release type
-        id: reltype
-        shell: bash
-        run: |
-          # Semver pre-release tags carry a hyphen suffix (e.g. v0.2.0-rc.1).
-          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
-            echo "prerelease=--prerelease" >> "$GITHUB_OUTPUT"
-            echo "Tag ${GITHUB_REF_NAME} -> pre-release"
-          else
-            echo "prerelease=" >> "$GITHUB_OUTPUT"
-            echo "Tag ${GITHUB_REF_NAME} -> full release"
-          fi
-
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "${GITHUB_REF_NAME}"
-          --repo "${GITHUB_REPOSITORY}"
-          --title "${GITHUB_REF_NAME}"
-          --generate-notes
-          ${{ steps.reltype.outputs.prerelease }}
-          artifacts/*
+        shell: bash
+        run: |
+          # Resolve the release tag and (for manual runs) the commit to tag.
+          target_args=()
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="v${{ github.event.inputs.version }}"
+            target_args=(--target "${GITHUB_SHA}")
+          fi
+
+          # Semver pre-release tags carry a hyphen suffix (e.g. v0.2.0-rc.1).
+          pre_args=()
+          if [[ "${tag}" == *-* ]]; then
+            pre_args=(--prerelease)
+            echo "Tag ${tag} -> pre-release"
+          else
+            echo "Tag ${tag} -> full release"
+          fi
+
+          gh release create "${tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${tag}" \
+            --generate-notes \
+            "${pre_args[@]}" \
+            "${target_args[@]}" \
+            artifacts/*

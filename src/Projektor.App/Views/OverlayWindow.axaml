@@ -5,85 +5,169 @@
         x:Class="Projektor.App.Views.OverlayWindow"
         x:DataType="vm:OverlayViewModel"
         Title="Projektor"
-        Width="720"
-        Height="440"
+        Width="760"
+        Height="480"
         CanResize="False"
         ShowInTaskbar="False"
         Topmost="True"
         WindowDecorations="None"
-        Background="#1E1E2E"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="Transparent"
+        TransparencyLevelHint="AcrylicBlur, Blur, Mica"
         WindowStartupLocation="CenterScreen">
 
-  <Border BorderBrush="#45475A"
-          BorderThickness="1"
-          Padding="16">
-    <DockPanel>
+  <Panel Margin="14">
+    <!-- Soft drop shadow layer -->
+    <Border CornerRadius="20"
+            Background="#16161F"
+            IsHitTestVisible="False">
+      <Border.Effect>
+        <DropShadowEffect Color="#000000" BlurRadius="34" OffsetX="0" OffsetY="14" Opacity="0.5" />
+      </Border.Effect>
+    </Border>
 
-      <TextBox x:Name="SearchBox"
-               DockPanel.Dock="Top"
-               PlaceholderText="Projekt suchen…"
-               FontSize="20"
-               Margin="0,0,0,12"
-               Text="{Binding SearchText}" />
+    <!-- Frosted-glass backdrop -->
+    <ExperimentalAcrylicBorder IsHitTestVisible="False"
+                               CornerRadius="20">
+      <ExperimentalAcrylicBorder.Material>
+        <ExperimentalAcrylicMaterial BackgroundSource="Digger"
+                                     TintColor="#1E1E2E"
+                                     TintOpacity="1"
+                                     MaterialOpacity="0.72" />
+      </ExperimentalAcrylicBorder.Material>
+    </ExperimentalAcrylicBorder>
 
-      <TextBlock DockPanel.Dock="Bottom"
-                 Margin="0,12,0,0"
-                 Foreground="#F38BA8"
-                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                 Text="{Binding StatusMessage}" />
+    <!-- Content surface with hairline highlight edge -->
+    <Border CornerRadius="20"
+            BorderBrush="{StaticResource GlassEdgeBrush}"
+            BorderThickness="1"
+            Padding="22">
 
-      <TextBlock DockPanel.Dock="Bottom"
-                 Margin="0,8,0,0"
-                 FontSize="11"
-                 Foreground="#6C7086"
-                 Text="Klick = starten · Alt+1…9 = Tool · Enter = Tool 1 · Shift+Enter = alle · Esc = schließen" />
+      <DockPanel>
 
-      <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+        <!-- Header -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="2,0,2,16">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Border Width="10" Height="10" CornerRadius="5"
+                    Background="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="Projektor"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextBrush}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Grid.Column="2"
+                     VerticalAlignment="Center"
+                     FontSize="11"
+                     Foreground="{StaticResource MutedBrush}"
+                     Text="Alt+Space" />
+        </Grid>
 
-        <ListBox Grid.Column="0"
-                 x:Name="ProjectList"
-                 ItemsSource="{Binding Projects}"
-                 SelectedItem="{Binding SelectedProject}">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="models:Project">
-              <StackPanel Margin="2">
-                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Path}" FontSize="11" Foreground="#9399B2" />
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Search -->
+        <TextBox x:Name="SearchBox"
+                 Classes="search"
+                 DockPanel.Dock="Top"
+                 PlaceholderText="Projekt suchen…"
+                 Margin="0,0,0,16"
+                 Text="{Binding SearchText}" />
 
-        <ScrollViewer Grid.Column="1">
-          <ItemsControl ItemsSource="{Binding Actions}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:ActionItem">
-                <Button Margin="0,0,0,6"
-                        Padding="10,8"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Left"
-                        Command="{Binding $parent[ItemsControl].((vm:OverlayViewModel)DataContext).LaunchCommand}"
-                        CommandParameter="{Binding}">
-                  <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0">
-                      <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
-                      <TextBlock Text="{Binding Command}" FontSize="11" Foreground="#9399B2" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="1"
-                               VerticalAlignment="Center"
+        <!-- Status -->
+        <TextBlock DockPanel.Dock="Bottom"
+                   Margin="2,12,2,0"
+                   FontSize="12"
+                   Foreground="{StaticResource DangerBrush}"
+                   IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Text="{Binding StatusMessage}" />
+
+        <!-- Hint bar -->
+        <Border DockPanel.Dock="Bottom"
+                Margin="0,14,0,0"
+                Padding="2,0">
+          <WrapPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,0">
+              <Border Classes="kbd"><TextBlock Text="Enter" /></Border>
+              <TextBlock Classes="hint" Text="Tool 1" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,0">
+              <Border Classes="kbd"><TextBlock Text="Shift+Enter" /></Border>
+              <TextBlock Classes="hint" Text="alle" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,0">
+              <Border Classes="kbd"><TextBlock Text="Alt+1…9" /></Border>
+              <TextBlock Classes="hint" Text="Tool" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Border Classes="kbd"><TextBlock Text="Esc" /></Border>
+              <TextBlock Classes="hint" Text="schließen" />
+            </StackPanel>
+          </WrapPanel>
+        </Border>
+
+        <!-- Body: projects | actions -->
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+
+          <DockPanel Grid.Column="0">
+            <TextBlock DockPanel.Dock="Top" Classes="section" Text="PROJEKTE" />
+            <ListBox x:Name="ProjectList"
+                     Classes="projects"
+                     ItemsSource="{Binding Projects}"
+                     SelectedItem="{Binding SelectedProject}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="models:Project">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Name}"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="{Binding Path}"
                                FontSize="11"
-                               Foreground="#6C7086"
-                               Text="{Binding ShortcutLabel}" />
-                  </Grid>
-                </Button>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{StaticResource SubtextBrush}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
 
-      </Grid>
+          <DockPanel Grid.Column="1">
+            <TextBlock DockPanel.Dock="Top" Classes="section" Text="ACTIONS" />
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding Actions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ActionItem">
+                    <Button Classes="action"
+                            Command="{Binding $parent[ItemsControl].((vm:OverlayViewModel)DataContext).LaunchCommand}"
+                            CommandParameter="{Binding}">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                          <TextBlock Text="{Binding Name}"
+                                     FontSize="15"
+                                     FontWeight="SemiBold"
+                                     Foreground="{StaticResource TextBrush}" />
+                          <TextBlock Text="{Binding Command}"
+                                     FontSize="11"
+                                     TextTrimming="CharacterEllipsis"
+                                     Foreground="{StaticResource SubtextBrush}" />
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Classes="kbd"
+                                VerticalAlignment="Center"
+                                Margin="10,0,0,0"
+                                IsVisible="{Binding ShortcutLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                          <TextBlock Text="{Binding ShortcutLabel}" />
+                        </Border>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
 
-    </DockPanel>
-  </Border>
+        </Grid>
+
+      </DockPanel>
+    </Border>
+  </Panel>
 
 </Window>

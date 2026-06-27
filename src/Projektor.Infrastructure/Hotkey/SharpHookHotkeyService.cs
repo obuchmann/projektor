@@ -9,7 +9,8 @@ namespace Projektor.Infrastructure.Hotkey;
 /// <summary>
 /// SharpHook-based global hotkey. Uses <see cref="SimpleGlobalHook"/> so handlers run on the
 /// hook thread, which is required for synchronous event suppression on Windows. The hook loop
-/// runs on a background thread; the matched hotkey is reported via <see cref="HotkeyPressed"/>.
+/// runs on a dedicated background thread so it never blocks process exit; the matched hotkey is
+/// reported via <see cref="HotkeyPressed"/>.
 /// </summary>
 /// <remarks>
 /// Suppression of the triggering key press only works on Windows/macOS — on Linux the key press
@@ -49,7 +50,11 @@ public sealed class SharpHookHotkeyService : IGlobalHotkeyService
             if (_hook is not null)
                 return; // Already running; new key/modifiers take effect immediately.
 
-            _hook = new SimpleGlobalHook(GlobalHookType.Keyboard);
+            // Run the hook on a background thread so it never keeps the process alive after the
+            // Avalonia main loop exits. Without this SharpHook spins up a *foreground* thread
+            // (RunAsync's default), and the app would linger as a zombie process when quit from
+            // the tray even after Dispose() stops the native hook.
+            _hook = new SimpleGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             _hook.KeyPressed += OnKeyPressed;
             _hook.RunAsync();
             _registered = true;

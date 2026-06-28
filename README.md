@@ -57,13 +57,38 @@ Ein Git-Tag `v*` löst einen Release-Build aus (`.github/workflows/release.yml`)
 - Paketiert als `projektor-<version>-win-x64.zip` und `projektor-<version>-linux-x64.tar.gz`
 - Automatisch als GitHub Release mit den Builds als Assets veröffentlicht
 
+Die Builds lassen sich auch ohne Release über `workflow_dispatch` erzeugen — sie liegen dann
+als Workflow-Artifacts zum Download bereit.
+
+### Automatische Versionierung
+
+Bei jedem Merge/Push auf `main` ermittelt `.github/workflows/auto-version.yml` automatisch
+die nächste Version und löst den Release-Build aus — manuelles Taggen ist nicht nötig.
+
+Die Bump-Stufe folgt [Conventional Commits](https://www.conventionalcommits.org/) anhand der
+Commits seit dem letzten stabilen Tag:
+
+| Commit (seit letztem Tag) | Bump | Beispiel |
+|---|---|---|
+| `feat: …` | Minor | `0.1.3 → 0.2.0` |
+| `fix:` / `refactor:` / sonstiges | Patch | `0.1.3 → 0.1.4` |
+| `feat!:` / `BREAKING CHANGE` | Major* | `0.1.3 → 1.0.0` |
+
+\* Solange die Version noch `0.x` ist, zählt ein Breaking Change als **Minor** (SemVer-Konvention
+für Pre-1.0).
+
+Den Versions-Tag erstellt anschließend `release.yml` am Merge-Commit. Da GitHub Workflows nicht
+durch Tags startet, die mit dem Standard-`GITHUB_TOKEN` gepusht werden, ruft `auto-version.yml`
+den Release direkt per `workflow_dispatch` auf — es ist **kein Secret nötig**.
+
+Einen Merge ohne Release veröffentlichen: `[skip release]` in die Commit-Message aufnehmen.
+
+Manuelles Taggen bleibt weiterhin möglich:
+
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
-
-Die Builds lassen sich auch ohne Release über `workflow_dispatch` erzeugen — sie liegen dann
-als Workflow-Artifacts zum Download bereit.
 
 ## Docs
 

@@ -1,0 +1,112 @@
+name: Auto Version
+
+# Berechnet bei jedem Push/Merge auf main automatisch die nächste SemVer-Version
+# (Conventional Commits) und löst den Release-Build aus.
+#
+# Hinweis: GitHub startet KEINE Workflows für Tags, die mit dem Standard-
+# GITHUB_TOKEN gepusht werden (Schutz vor Endlosschleifen). Einzige Ausnahme
+# sind workflow_dispatch/repository_dispatch. Deshalb wird release.yml hier
+# direkt per `gh workflow run` (workflow_dispatch) aufgerufen – release.yml
+# erstellt dann den Git-Tag am Merge-Commit und baut/veröffentlicht.
+#
+# Opt-out: Enthält die Commit-Message "[skip release]", wird nichts getaggt.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: auto-version
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Compute version & trigger release
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Letzter stabiler Release-Tag (vX.Y.Z), Pre-Releases (-rc.1 o.ä.) ignorieren.
+          latest="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+            | grep -vE -- '-' | head -n1 || true)"
+
+          if [ -z "$latest" ]; then
+            base="0.0.0"
+            echo "Kein bisheriger Release-Tag – starte ab v$base"
+            commits="$(git log --no-merges --format='%B')"
+          else
+            base="${latest#v}"
+            echo "Letzter Release-Tag: $latest"
+            commits="$(git log --no-merges --format='%B' "${latest}..HEAD")"
+          fi
+
+          # Keine neuen Commits -> nichts zu releasen.
+          if [ -z "$(printf '%s' "$commits" | tr -d '[:space:]')" ]; then
+            echo "Keine neuen Commits seit ${latest:-Anfang} – kein Release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IFS='.' read -r major minor patch <<<"$base"
+
+          # Bump-Stufe aus Conventional Commits ableiten.
+          bump="patch"
+          if grep -qiE 'BREAKING[ -]CHANGE' <<<"$commits" \
+             || grep -qE '^[a-zA-Z]+(\([^)]*\))?!:' <<<"$commits"; then
+            bump="major"
+          elif grep -qiE '^feat(\([^)]*\))?:' <<<"$commits"; then
+            bump="minor"
+          fi
+
+          # Pre-1.0: Breaking Changes erhöhen Minor statt Major.
+          if [ "$major" -eq 0 ] && [ "$bump" = "major" ]; then
+            bump="minor"
+          fi
+
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+
+          version="${major}.${minor}.${patch}"
+          tag="v${version}"
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} existiert bereits – überspringe."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Bump: ${bump} -> ${tag}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger release workflow
+        if: steps.ver.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "Löse Release ${{ steps.ver.outputs.tag }} aus (release.yml, workflow_dispatch)"
+          gh workflow run release.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "${GITHUB_REF_NAME}" \
+            -f version="${{ steps.ver.outputs.version }}"
